@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+
+    <style>
+        progress[value]::-webkit-progress-value {
+            background-color: rgba(239, 68, 68);
+
+        }
+        h2{
+            font-weight: bold;
+            font-family: Georgia;
+            color: lightcoral;
+        }
+        progress[value]::-webkit-progress-bar {
+            border-radius: 2px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
+        }
+
+        progress:after {
+            content: attr(value)'% you are losing the game!';
+            color: lightskyblue;
+        }
+        p{
+            text-align: center;
+        }
+    </style>
+    <title style="font-family: Georgia"> Hangman </title>
+</head>
+
+<body>
+
+<div class="w-full flex flex-col space-y-2 justify-center items-center p-10 font-semibold">
+    <div class="text-4xl text-">Hangman</div>
+    <div class="text-base text-center text-gray-500">
+         <h2> Welcome to Hangman Game <br>
+             You can enter a word or a letter.
+             You have 5 chances to enter a letter. If you guess a word wrong you lose. HAVE FUN!!!</h2>
+
+    </div>
+</div>
+
+<div class="w-full  justify-between items-center flex flex-col px-10 py-5 space-y-5">
+
+    <div class="w-3/4 rounded-md bg-gray-100 p-2 flex justify-between items-center shadow-xl">
+        <div class="flex space-x-2 justify-center items-center">
+            <div class="text-lg "> Maxmimum Number of Letters </div>
+            <input class="px-2 py-1 rounded-md text-gray-700" type="number" min="1" id="maxNumOfLetters">
+            <select class="rounded-md px-3 py-2" name="category" id="category">
+                <option value="">Select a category</option>
+                <option value="car">Car</option>
+                <option value="color">Color</option>
+            </select>
+        </div>
+        <button class="bg-gray-500 rounded-md px-2 py-2 text-white" onclick="createGame()">
+           Guess
+        </button>
+    </div>
+
+    <div id="guess" class="hidden w-3/4 rounded-md bg-yellow-100 p-2 flex justify-between items-center shadow-xl">
+        <div class="flex space-x-2 justify-center items-center">
+            <div class="text-lg text-yellow-800"> Choose a Letter or a word </div>
+            <input class="px-2 py-1 rounded-md text-yellow-700" type="text" id="guessedCharOrWord">
+        </div>
+        <button class="bg-yellow-400 rounded-md px-2 py-2 text-white" onclick="onGuessCharOrWord()">
+            Guess letter/Word
+        </button>
+    </div>
+
+    <div id="gameBoard"
+         class="w-3/4 border-4 border-blue-300 rounded-md bg-white flex justify-center items-center shadow-xl">
+        <div class="text-xl p-10 text-blue-400">Word will be displayed here</div>
+    </div>
+
+    <div id="gameStatus"
+         class="hidden w-3/4 rounded-md text-xl p-10 text-white justify-center items-center shadow-xl">
+    </div>
+
+    <progress class="hidden w-3/4" id="progress" value="0" max="100"> 0% </progress>
+</div>
+
+
+<script type="text/javascript">
+    let curGame = {};
+
+    let words = {
+        words: [{
+            "category": "car",
+            "word": "Toyota"
+        }, {
+            "category": "car",
+            "word": "Honda"
+        }, {
+            "category": "car",
+            "word": "lamborghini"
+        }, , {
+            "category": "car",
+            "word": "jeep"
+        }, {
+            "category": "car",
+            "word": "marcedes"
+        }, {
+            "category": "car",
+            "word": "bmw"
+        }, {
+            "category": "car",
+            "word": "audi"
+        }, {
+            "category": "car",
+            "word": "porsche"
+        }, {
+            "category": "car",
+            "word": "chevrolet"
+        }, {
+            "category": "car",
+            "word": "mazda"
+        }, {
+            "category": "color",
+            "word": "black"
+        }, {
+            "category": "color",
+            "word": "lavender"
+        }, {
+            "category": "color",
+            "word": "green"
+        }, {
+            "category": "color",
+            "word": "blue"
+        }, {
+            "category": "color",
+            "word": "yellow"
+        }, {
+            "category": "color",
+            "word": "pink"
+        }, {
+            "category": "color",
+            "word": "red"
+        }, {
+            "category": "color",
+            "word": "white"
+        }, {
+            "category": "color",
+            "word": "purple"
+        }, {
+            "category": "color",
+            "word": "brown"
+        }, ]
+    }
+
+    function createGame() {
+        let maxNums = document.getElementById("maxNumOfLetters").value;
+        let category = document.getElementById("category").value;
+        let gameBoard = document.getElementById("gameBoard");
+        let progress = document.getElementById("progress");
+        let gameStatus = document.getElementById("gameStatus");
+        let guess = document.getElementById("guess");
+
+        if (!maxNums || !category) {
+            alert("Please enter all values to start a new game!");
+            return;
+        }
+        curGame.maxNums = maxNums;
+        curGame.category = category;
+        curGame = getRandomWord(words, curGame);
+        curGame.guessPos = getGuessPos(curGame.word.length, maxNums);
+
+        //SET WORDS
+        gameBoard.innerHTML = "";
+        gameBoard.appendChild(createCharDiv());
+
+        curGame.chancesAvailable = 5;
+
+        gameBoard.classList.remove("hidden");
+        progress.classList.remove("hidden");
+        guess.classList.remove("hidden");
+        gameStatus.classList.add("hidden");
+        gameStatus.innerHTML = "";
+        progress.value = 0;
+    }
+
+    function onGuessCharOrWord() {
+        let guessedCharOrWord = document.getElementById("guessedCharOrWord");
+        let progress = document.getElementById("progress");
+        let guessVal = guessedCharOrWord.value;
+        if (!guessVal) {
+            alert("Please guess a Character or a word");
+            return;
+        }
+        console.log(guessVal, curGame)
+        if (guessVal.length > 1) {
+            if (guessVal === curGame.word) {
+                curGame.guessPos = new Set();
+            }
+            curGame.chancesAvailable = 0;
+
+        } else {
+            console.log("Index:", curGame.word.indexOf(guessVal))
+            if (curGame.word.indexOf(guessVal) !== -1) {
+                for (let index of curGame.guessPos) {
+                    if (curGame.word[index] === guessVal) {
+                        curGame.guessPos.delete(index);
+                    }
+                }
+            } else {
+                curGame.chancesAvailable--;
+                progress.value = 100 - (curGame.chancesAvailable * 20);
+            }
+        }
+        setGameStatus();
+    }
+
+    function checkStatus() {
+        if (!curGame.guessPos.size && curGame.chancesAvailable > 0) {
+            return "won";
+        } else if (curGame.chancesAvailable > 0) {
+            return "active";
+        } else {
+            return "lost"
+        }
+    }
+
+    function setGameStatus() {
+        let gameBoard = document.getElementById("gameBoard");
+        let gameStatus = document.getElementById("gameStatus");
+        let progress = document.getElementById("progress");
+        let status = checkStatus();
+        if (status === "won") {
+            gameStatus.innerHTML = "Game Won!!!";
+            gameStatus.classList.remove("hidden");
+            gameStatus.classList.remove("bg-red-400");
+            gameStatus.classList.add("bg-green-400");
+            gameBoard.innerHTML = "";
+            gameBoard.classList.add("hidden");
+            progress.classList.add("hidden");
+        } else if (status === "lost") {
+            gameStatus.innerHTML = "Game Lost!!!";
+            gameStatus.classList.remove("hidden");
+            gameStatus.classList.remove("bg-green-400");
+            gameStatus.classList.add("bg-red-400");
+            gameBoard.innerHTML = "";
+            gameBoard.classList.add("hidden");
+            progress.classList.add("hidden");
+
+        } else {
+            gameBoard.innerHTML = "";
+            gameBoard.appendChild(createCharDiv());
+        }
+
+    }
+
+    function createCharDiv() {
+        let charsDiv = document.createElement("div");
+        charsDiv.className = "p-4 flex justify-center space-x-5 w-full shadow-xl bg-blue-600";
+        for (let i = 0; i < curGame.word.length; i++) {
+            if (curGame.guessPos.has(i)) {
+                charsDiv.appendChild(createEachCharDiv("-"));
+            } else {
+                charsDiv.appendChild(createEachCharDiv(curGame.word[i]));
+            }
+        }
+        return charsDiv;
+    }
+
+    function createEachCharDiv(val) {
+        let revDiv = document.createElement("div");
+        revDiv.className = "py-4 px-8 flex rounded-md shadow-lg bg-white";
+        revDiv.innerHTML = val;
+        return revDiv;
+    }
+
+
+    function getRandomWord(words, curGame) {
+        const possibleWords = words.words.filter(v => v["category"] === curGame.category).map(v => v["word"]);
+        curGame.word = possibleWords[Math.floor(Math.random() * possibleWords.length)];
+        return curGame;
+    }
+
+    function getGuessPos(range, outputCount) {
+
+        let arr = [],
+            result = new Set()
+        for (let i = 0; i < range; i++)
+            arr.push(i)
+        for (let i = 0; i < outputCount; i++) {
+            const random = Math.floor(Math.random() * (range - i));
+            if (arr[random]) {
+                result.add(arr[random]);
+            }
+            arr[random] = arr[range - i];
+        }
+        return result;
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous">
+</script>
+</body>
+<p>
+    <a href = "index.html"> Go to Home page </a>
+</p>
+
+</html>
